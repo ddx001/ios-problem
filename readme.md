@@ -38,3 +38,98 @@ KeyboardPlugin: resize mode - native
 ⚡️  TO JS {"mode":"native"}
 Invalidating grant <invalid NS/CF object> failed
 ```
+
+**Debugging / Fixing:**
+
+* Start the app in Xcode.
+* Open Safari, click on the "Develop" menu and select device.
+* Click on the reload icon in the Safari Web Inspector.
+
+Errors:
+```
+[Error] TypeError: undefined is not an object (evaluating 'gapi.iframes.getContext')
+[Error] Error: w`capacitor
+[Error] Cross-origin redirection to http://developers.google.com/ denied by Cross-Origin Resource Sharing policy: Origin capacitor://localhost is not allowed by Access-Control-Allow-Origin. Status code: 301
+[Error] XMLHttpRequest cannot load https://apis.google.com/_/jserror?script=https%3A%2F%2Fapis.google.com%2F_%2Fscs%2Fabc-static%2F_%2Fjs%2Fk%3Dgapi.lb.fr.r1jvixKj4ng.O%2Fm%3Dgapi_iframes%2Frt%3Dj%2Fsv%3D1%2Fd%3D1%2Fed%3D1%2Frs%3DAHpOoo9o9T65AZaaIjldT_tEb7nM0LGeIQ%2Fcb%3Dgapi.loaded_0&error=w%60capacitor&line=147 due to access control checks.
+[Error] Failed to load resource: Cross-origin redirection to http://developers.google.com/ denied by Cross-Origin Resource Sharing policy: Origin capacitor://localhost is not allowed by Access-Control-Allow-Origin. Status code: 301 (jserror, line 0)
+```
+
+Cross-origin error:
+
+* https://ionicframework.com/docs/troubleshooting/cors#b-working-around-cors-in-a-server-you-cant-control
+* https://capacitorjs.com/docs/apis/http?_gl=1*196x8pm*_gcl_au*MzQ0Njg3MDcyLjE3MzY1MjEzNjU.*_ga*MzMzMDA0NTExLjE3MzY1MjEzNjU.*_ga_REH9TJF6KF*MTczNjU5MjMwOS4zLjEuMTczNjU5MzMzMy4wLjAuMA..
+* Add this to capacitor.config.ts:
+```
+  plugins: {
+    CapacitorHttp: {
+      enabled: true
+    }
+  }
+```
+* Result: the Cross-origin error is gone, we now have:
+```
+[Error] TypeError: undefined is not an object (evaluating 'gapi.iframes.getContext')
+[Log] native CapacitorHttp.request (#123355916) (user-script:2, line 364)
+  [Log] Object (user-script:2, line 371)
+    callbackId: "123355916"
+    methodName: "request"
+    options: {url: "https://apis.google.com/_/jserror?script=https%3A%…2Fcb%3Dgapi.loaded_0&error=w%60capacitor&line=147", method: "POST", data: "trace=%40https%3A%2F%2Fapis.google.com%2F_%2Fscs%2…3Dgapi.loaded_1%3A1%3A14&context.severity=unknown", headers: {Content-Type: "application/x-www-form-urlencoded;charset=utf-8"}, dataType: "json"}
+    pluginId: "CapacitorHttp"
+    type: "message"
+    Prototype Object
+[Error] Error: w`capacitor
+[Log] result CapacitorHttp.request (#123355916) (user-script:2, line 338)
+  [Error] Object
+    code: "NSURLErrorDomain"
+    errorMessage: "The resource could not be loaded because the App Transport Security policy requires the use of a secure connection."
+    message: "The resource could not be loaded because the App Transport Security policy requires the use of a secure connection."
+```
+* https://stackoverflow.com/questions/32631184/the-resource-could-not-be-loaded-because-the-app-transport-security-policy-requi
+* Based on the above and suggestions from GitHub Copilot, I ended up adding this to ios/App/App/Info.plist:
+```
+	<key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSExceptionDomains</key>
+    <dict>
+      <key>apis.google.com</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+        <true/>
+        <key>NSTemporaryExceptionMinimumTLSVersion</key>
+        <string>TLSv1.0</string>
+      </dict>
+      <key>developers.google.com</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+        <true/>
+        <key>NSTemporaryExceptionMinimumTLSVersion</key>
+        <string>TLSv1.0</string>
+      </dict>
+    </dict>
+  </dict>
+```
+* The error is gone, but the app still doesn't work.
+* Logs:
+```
+[Error] TypeError: undefined is not an object (evaluating 'gapi.iframes.getContext')
+[Log] native CapacitorHttp.request (#105958631) (user-script:2, line 364)
+  [Log] Object (user-script:2, line 371)
+    callbackId: "105958631"
+    methodName: "request"
+    options: {url: "https://apis.google.com/_/jserror?script=https%3A%…2Fcb%3Dgapi.loaded_0&error=w%60capacitor&line=147", method: "POST", data: "trace=%40https%3A%2F%2Fapis.google.com%2F_%2Fscs%2…3Dgapi.loaded_1%3A1%3A14&context.severity=unknown", headers: {Content-Type: "application/x-www-form-urlencoded;charset=utf-8"}, dataType: "json"}
+    pluginId: "CapacitorHttp"
+    type: "message"
+    Prototype Object
+[Error] Error: w`capacitor
+[Log] result CapacitorHttp.request (#105958631) (user-script:2, line 338)
+  [Log] Object (user-script:2, line 349)
+    data: "<!doctype html>↵<html ↵      lang=\"en\"↵      dir=\"ltr\">↵  <head>↵    <meta name=\"google-signin-client-id…"
+    headers: {cache-control: "no-cache, must-revalidate", expires: "0", content-security-policy: "base-uri 'self'; object-src 'none'; script-src 'st…ort-uri https://csp.withgoogle.com/csp/devsite/v2", x-cloud-trace-context: "95297de33fb653b36c481ac2fcd4b4b3", alt-svc: "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", …}
+    status: 200
+    url: "https://developers.google.com/"
+    Prototype Object
+```
