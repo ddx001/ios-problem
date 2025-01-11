@@ -18,11 +18,9 @@ export class HomePage {
 
   async signInAnonymously() {
     await this.firebaseAuthService.signInAnonymously();
-    console.log('Anonymous sign in complete');
   }
 
   async signOut() {
     await this.firebaseAuthService.signOut();
-    console.log('Sign out complete');
   }
 }

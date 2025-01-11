@@ -7,7 +7,7 @@ It consists of a blank Ionic app (created with `ionic start`) with Firebase Auth
 
 * Create a Firebase project (https://console.firebase.google.com/) and enable Authentication on it. Then, in the "Sign-in method" tab, add the "Anonymous" sign-in provider.
 * Clone the project `git clone https://github.com/ddx001/ios-problem.git`
-* Configure the project to use Firebase by updating the files in src/environments with your new project configuration.
+* Configure the project to use Firebase by updating the files in src/environments with your new Firebase project's configuration.
 * Run `npm install`
 * Run `ionic serve`
 * Open the app (http://localhost:8100) in a browser and click the "Sign in anonymously" button.
@@ -132,4 +132,30 @@ Cross-origin error:
     status: 200
     url: "https://developers.google.com/"
     Prototype Object
+```
+
+* Added console logging to firebase-auth.service.ts:
+* Result in 'ionic serve' mode (load then click button):
+```
+***** Calling getAuth(initializeApp(...))
+***** getAuth(initializeApp(...)) call complete
+***** Calling onAuthStateChanged()
+***** onAuthStateChanged() call complete
+***** onAuthStateChanged() callback null
+***** Calling signInAnonymously()
+***** onAuthStateChanged() callback _UserImpl {providerId: 'firebase' ...
+***** signInAnonymously() call complete
+***** Calling signOut()
+***** onAuthStateChanged() callback null
+***** signOut() call complete
+```
+* Result in iOS (same actions - load then click button):
+```
+***** Calling getAuth(initializeApp(...))
+***** getAuth(initializeApp(...)) call complete
+***** Calling onAuthStateChanged()
+***** onAuthStateChanged() call complete
+!!! NO CALLBACK, NO ERROR !!!
+***** Calling signInAnonymously()
+!!! NOTHING HAPPENS, CALL DOESN'T COMPLETE, NO AUTH STATE CHANGED CALLBACK, NO ERRORS !!!
 ```
